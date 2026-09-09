@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Calendar Life DAG — Prototype v1</title>
+  <style>
+    :root{--bg:#0b0c10;--panel:#12141a;--panel2:#171a22;--ink:#f5f6f8;--muted:#979dab;--line:#2a2f3a;--accent:#8b5cf6;--accent2:#22d3ee;--warn:#f59e0b;--ok:#34d399;--danger:#fb7185;--radius:20px}
+    *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{min-height:100vh}
+    button,select{font:inherit}.app{max-width:1180px;margin:0 auto;padding:18px 14px 64px}.top{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;margin-bottom:16px}.brand h1{margin:0;font-size:clamp(28px,7vw,58px);letter-spacing:-.05em;line-height:.94}.brand p{margin:10px 0 0;color:var(--muted);max-width:680px;font-size:14px;line-height:1.6}.badge{white-space:nowrap;border:1px solid var(--line);background:var(--panel);padding:8px 11px;border-radius:999px;font-size:12px;color:#cbd1dc}.controls{display:grid;grid-template-columns:1fr auto auto;gap:10px;background:var(--panel);border:1px solid var(--line);padding:10px;border-radius:18px;position:sticky;top:8px;z-index:5;box-shadow:0 18px 50px #0008}.controls select,.controls button{min-height:44px;border:1px solid var(--line);border-radius:13px;background:var(--panel2);color:var(--ink);padding:0 12px}.controls button{cursor:pointer;font-weight:700}.controls .primary{background:var(--ink);color:#111;border-color:var(--ink)}.grid{display:grid;grid-template-columns:310px 1fr;gap:14px;margin-top:14px}.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}.card h2{font-size:12px;text-transform:uppercase;letter-spacing:.13em;color:#b7bdc8;margin:0;padding:16px 16px 10px}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px 12px}.metric{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px}.metric b{display:block;font-size:24px;letter-spacing:-.04em}.metric span{font-size:11px;color:var(--muted)}.legend{padding:4px 14px 16px;display:flex;flex-wrap:wrap;gap:8px}.chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#c8ced8}.dot{width:8px;height:8px;border-radius:50%}.timeline{padding:2px 12px 14px}.event{display:grid;grid-template-columns:48px 10px 1fr;gap:9px;align-items:start;padding:7px 0}.event time{font-size:11px;color:var(--muted);padding-top:4px}.event .bar{width:6px;height:100%;min-height:34px;border-radius:999px;background:#666}.event .txt{font-size:13px;line-height:1.35}.event .txt small{display:block;color:var(--muted);margin-top:3px}.stage{position:relative;min-height:740px;background:radial-gradient(circle at 78% 0%,#1c1633 0,transparent 34%),var(--panel)}.stageHead{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 6px}.stageHead h2{padding:0}.stageHead span{font-size:11px;color:var(--muted)}svg{width:100%;height:690px;display:block}.edge{stroke:#596171;stroke-width:1.5;fill:none;opacity:.8}.edge.critical{stroke:var(--accent2);stroke-width:2.7;opacity:1}.node rect{fill:#171a22;stroke:#343a47;stroke-width:1.2}.node.critical rect{stroke:var(--accent2);stroke-width:2.2}.node text.title{fill:var(--ink);font-size:13px;font-weight:700}.node text.meta{fill:#99a1b0;font-size:10px}.node circle{stroke:#0b0c10;stroke-width:2}.insight{padding:14px 16px;border-top:1px solid var(--line);display:grid;gap:9px}.insightRow{display:grid;grid-template-columns:22px 1fr;gap:8px;font-size:12px;line-height:1.5;color:#d8dde6}.insightRow i{font-style:normal;color:var(--accent2)}.privacy{margin-top:14px;padding:13px 15px;border:1px dashed #39404e;border-radius:16px;color:var(--muted);font-size:12px;line-height:1.55}.footer{margin-top:14px;color:#707887;font-size:11px;text-align:center}
+    @media(max-width:780px){.top{display:block}.badge{display:inline-block;margin-top:12px}.controls{grid-template-columns:1fr 1fr}.controls select{grid-column:1/-1}.grid{grid-template-columns:1fr}.stage{min-height:620px}svg{height:580px}.metrics{grid-template-columns:repeat(4,1fr)}.metric{padding:9px}.metric b{font-size:18px}.metric span{font-size:9px}.timeline{max-height:290px;overflow:auto}.brand p{font-size:13px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <h1>Calendar<br>Life DAG</h1>
+      <p>Google Calendar を「予定の一覧」ではなく、準備・移動・本番・片付けがつながる依存グラフとして読む試作。公開デモは匿名化したイベントだけを使用。</p>
+    </div>
+    <span class="badge">prototype v1</span>
+  </header>
+
+  <section class="controls">
+    <select id="scenario" aria-label="シナリオ">
+      <option value="work">仕事の日 — 予約・準備・清掃</option>
+      <option value="outing">外出の日 — 移動・乗換・目的地</option>
+      <option value="life">生活運用 — 買い物・印刷・準備</option>
+    </select>
+    <button id="toggleCritical">Critical Path</button>
+    <button class="primary" id="infer">依存関係を再推定</button>
+  </section>
+
+  <main class="grid">
+    <aside class="card">
+      <h2>Day metrics</h2>
+      <div class="metrics">
+        <div class="metric"><b id="mNodes">0</b><span>予定</span></div>
+        <div class="metric"><b id="mEdges">0</b><span>依存</span></div>
+        <div class="metric"><b id="mDepth">0</b><span>DAG深度</span></div>
+        <div class="metric"><b id="mParallel">0</b><span>並列候補</span></div>
+      </div>
+      <h2>Event stream</h2>
+      <div class="legend">
+        <span class="chip"><span class="dot" style="background:#34d399"></span>生活</span>
+        <span class="chip"><span class="dot" style="background:#8b5cf6"></span>準備</span>
+        <span class="chip"><span class="dot" style="background:#22d3ee"></span>移動</span>
+        <span class="chip"><span class="dot" style="background:#fb7185"></span>本番</span>
+        <span class="chip"><span class="dot" style="background:#f59e0b"></span>雑務</span>
+      </div>
+      <div class="timeline" id="timeline"></div>
+    </aside>
+
+    <section class="card stage">
+      <div class="stageHead"><h2>Inferred dependency graph</h2><span id="modeLabel">normal</span></div>
+      <svg id="graph" viewBox="0 0 820 690" role="img" aria-label="予定の依存グラフ"></svg>
+      <div class="insight" id="insights"></div>
+    </section>
+  </main>
+
+  <div class="privacy">Privacy by design: この試作では氏名・メールアドレス・電話番号・顧客メモをDAG生成前に破棄する想定です。グラフ生成に使うのは「カテゴリ・時刻・所要時間・匿名化タイトル」のみ。</div>
+  <div class="footer">Calendar Life DAG / prototype v1 — static GitHub Pages demo</div>
+</div>
+
+<script>
+const COLORS={life:'#34d399',prep:'#8b5cf6',travel:'#22d3ee',main:'#fb7185',errand:'#f59e0b'};
+const DATA={
+ work:[
+  ['01:00','睡眠',480,'life'],['09:00','起床',60,'life'],['09:30','身支度',30,'prep'],['10:00','予約A',60,'main'],['11:00','インターホンON',30,'errand'],['12:00','昼食',30,'life'],['15:45','スパ準備',30,'prep'],['16:30','予約B',60,'main'],['17:30','予約C',60,'main'],['18:30','インターホンON',30,'errand'],['19:00','夕食',30,'life'],['23:30','お風呂',30,'life']
+ ],
+ outing:[
+  ['08:00','起床・身支度',90,'prep'],['09:00','京都駅へ移動',30,'travel'],['09:30','電車',30,'travel'],['10:00','バス',30,'travel'],['10:30','受付・支払い',30,'errand'],['11:00','待機・散策',105,'life'],['12:45','メインイベント',45,'main'],['13:30','帰路',90,'travel'],['15:00','帰宅',30,'life'],['19:00','夕食',30,'life']
+ ],
+ life:[
+  ['09:00','起床',60,'life'],['10:00','営業日変更',30,'errand'],['10:30','予約手続き',30,'errand'],['12:00','昼食',30,'life'],['12:30','書類を印刷',30,'errand'],['13:00','日用品を買う',30,'errand'],['14:00','デザイン作成',60,'prep'],['15:30','設備を直す',30,'errand'],['16:00','仕事準備',30,'prep'],['17:00','本番',120,'main'],['19:00','夕食',30,'life'],['23:30','お風呂',30,'life']
+ ]
+};
+
+function mins(t){const [h,m]=t.split(':').map(Number);return h*60+m}
+function classify(title,type){return type}
+function inferEdges(events){
+ const edges=[];
+ const push=(a,b,why)=>{if(a>=0&&b>=0&&a!==b&&!edges.some(e=>e.a===a&&e.b===b))edges.push({a,b,why})};
+ for(let i=0;i<events.length;i++){
+  const e=events[i], prev=events[i-1];
+  if(prev && mins(e[0])>=mins(prev[0])) push(i-1,i,'時系列');
+  if(e[3]==='main'){
+    let prep=-1,travel=-1;
+    for(let j=i-1;j>=0;j--){if(prep<0&&events[j][3]==='prep')prep=j;if(travel<0&&events[j][3]==='travel')travel=j;if(prep>=0&&travel>=0)break}
+    if(prep>=0)push(prep,i,'準備→本番');
+    if(travel>=0)push(travel,i,'移動→本番');
+  }
+  if(e[3]==='travel'){
+    for(let j=i-1;j>=0;j--){if(events[j][3]==='prep'){push(j,i,'準備→移動');break}}
+  }
+ }
+ // remove some weak chronological edges when there is a stronger shortcut conflict
+ return edges.filter((e,idx)=>!(e.why==='時系列' && edges.some(x=>x.a===e.a&&x.b===e.b&&x.why!=='時系列')));
+}
+function longestPath(n,edges){
+ const incoming=Array.from({length:n},()=>[]);edges.forEach((e,i)=>incoming[e.b].push([e.a,i]));
+ const dp=Array(n).fill(1),prev=Array(n).fill(-1),prevEdge=Array(n).fill(-1);
+ for(let i=0;i<n;i++) for(const [a,ei] of incoming[i]) if(dp[a]+1>dp[i]){dp[i]=dp[a]+1;prev[i]=a;prevEdge[i]=ei}
+ let end=dp.indexOf(Math.max(...dp));const nodes=new Set(),edgeIds=new Set();while(end>=0){nodes.add(end);if(prevEdge[end]>=0)edgeIds.add(prevEdge[end]);end=prev[end]}
+ return {depth:Math.max(...dp),nodes,edgeIds};
+}
+function layers(n,edges){const indeg=Array(n).fill(0),out=Array.from({length:n},()=>[]);edges.forEach(e=>{indeg[e.b]++;out[e.a].push(e.b)});const layer=Array(n).fill(0),q=[];indeg.forEach((d,i)=>{if(!d)q.push(i)});while(q.length){const a=q.shift();for(const b of out[a]){layer[b]=Math.max(layer[b],layer[a]+1);if(--indeg[b]===0)q.push(b)}}return layer}
+function render(){
+ const key=document.querySelector('#scenario').value;const events=DATA[key].map((x,i)=>({...x,id:i,0:x[0],1:x[1],2:x[2],3:x[3]}));const edges=inferEdges(DATA[key]);const lp=longestPath(events.length,edges);const ls=layers(events.length,edges);window.__state={events,edges,lp,ls};
+ document.querySelector('#mNodes').textContent=events.length;document.querySelector('#mEdges').textContent=edges.length;document.querySelector('#mDepth').textContent=lp.depth;const counts={};ls.forEach(x=>counts[x]=(counts[x]||0)+1);document.querySelector('#mParallel').textContent=Object.values(counts).filter(x=>x>1).reduce((a,b)=>a+b-1,0);
+ document.querySelector('#timeline').innerHTML=events.map(e=>`<div class="event"><time>${e[0]}</time><span class="bar" style="background:${COLORS[e[3]]}"></span><div class="txt">${e[1]}<small>${e[2]} min · ${e[3]}</small></div></div>`).join('');
+ draw(false);renderInsights(key,events,edges,lp,counts)
+}
+function draw(critical){const {events,edges,lp,ls}=window.__state;const svg=document.querySelector('#graph');const maxL=Math.max(...ls);const buckets={};ls.forEach((l,i)=>(buckets[l]??=[]).push(i));const pos={};Object.entries(buckets).forEach(([l,ids])=>{ids.forEach((id,k)=>{const x=80+(+l)*(660/Math.max(1,maxL));const spread=ids.length===1?345:120+k*(450/Math.max(1,ids.length-1));pos[id]={x,y:spread}})});
+ let html='<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#677083"/></marker><marker id="arrowC" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#22d3ee"/></marker></defs>';
+ edges.forEach((e,i)=>{const a=pos[e.a],b=pos[e.b],c=critical&&lp.edgeIds.has(i);const d=`M ${a.x+62} ${a.y} C ${a.x+95} ${a.y}, ${b.x-95} ${b.y}, ${b.x-62} ${b.y}`;html+=`<path class="edge ${c?'critical':''}" d="${d}" marker-end="url(#${c?'arrowC':'arrow'})"><title>${e.why}</title></path>`});
+ events.forEach((e,i)=>{const p=pos[i],c=critical&&lp.nodes.has(i);html+=`<g class="node ${c?'critical':''}" transform="translate(${p.x-62},${p.y-27})"><rect width="124" height="54" rx="13"/><circle cx="12" cy="13" r="6" fill="${COLORS[e[3]]}"/><text class="title" x="12" y="33">${escapeXml(e[1].slice(0,13))}</text><text class="meta" x="12" y="47">${e[0]} · ${e[2]}m</text></g>`});svg.innerHTML=html;document.querySelector('#modeLabel').textContent=critical?'critical path':'normal'}
+function escapeXml(s){return s.replace(/[<>&'\"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c]))}
+function renderInsights(key,events,edges,lp,counts){let lines=[];if(key==='work')lines=['予約の前後にある「準備」「インターホン」などを業務チェーンとして束ねられます。','連続する予約は1本の業務ブロックとして扱い、前後の余白不足を検出できます。','食事・入浴などは依存しないため、仕事のCritical Pathとは分離できます。'];if(key==='outing')lines=['乗換を一本道として捉えると、1か所の遅延が後段へ波及することが見えます。','待機・散策は「必須ではない余白」として、遅延吸収バッファにできます。','帰路は目的達成後の独立チェーンとして切り分け可能です。'];if(key==='life')lines=['買い物・印刷などの雑務は同じ時間帯にまとめられる可能性があります。','「デザイン作成→仕事準備→本番」は強い依存関係として推定されます。','雑務を前倒しするとCritical Pathを短くできる候補が見つかります。'];document.querySelector('#insights').innerHTML=lines.map((x,i)=>`<div class="insightRow"><i>0${i+1}</i><div>${x}</div></div>`).join('')}
+let critical=false;document.querySelector('#scenario').addEventListener('change',()=>{critical=false;render()});document.querySelector('#infer').addEventListener('click',()=>{critical=false;render();document.querySelector('#infer').textContent='再推定しました';setTimeout(()=>document.querySelector('#infer').textContent='依存関係を再推定',900)});document.querySelector('#toggleCritical').addEventListener('click',()=>{critical=!critical;draw(critical)});render();
+</script>
+</body>
+</html>
